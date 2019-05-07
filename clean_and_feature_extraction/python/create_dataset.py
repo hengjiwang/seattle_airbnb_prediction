@@ -34,5 +34,5 @@ if __name__ == '__main__':
     sub_lists = os.listdir(sys.argv[1])
     for sub in sub_lists:
         creater = CreateDataSet(sys.argv[1]+sub+'/', sys.argv[2]+'/'+sub+'.csv')
-        print(sub)
+        print('Processing'+sub+'...')
         creater.create()
