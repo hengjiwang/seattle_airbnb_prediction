@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re, collections
 
-class listingsPreprocessing:
+class ListingsPreprocessing:
     
     # Init
     def __init__(self, path):
@@ -11,7 +11,7 @@ class listingsPreprocessing:
 
     # Load data
     def load(self):
-        return pd.read_csv(self.path)
+        return pd.read_csv(self.path, low_memory=False)
 
     # Get attributes from l
     def get_attributes(self, l):
@@ -101,8 +101,24 @@ class listingsPreprocessing:
 
     # Clean data
     def clean(self, l, attr):
-        inds = [0, 22, 39, 51, 52, 53, 54, 55, 56, 57, 58, 60, 67, 68, 76, 80, 91]
-        l_info = [v[1] for v in attr if v[0] in inds]
+        l_info = ['id',
+        'host_since',
+        'neighbourhood_cleansed',
+        'property_type',
+        'room_type',
+        'accommodates',
+        'bathrooms',
+        'bedrooms',
+        'beds',
+        'bed_type',
+        'amenities',
+        'price',
+        'minimum_nights',
+        'maximum_nights',
+        'number_of_reviews',
+        'review_scores_accuracy',
+        'cancellation_policy']
+
         l = l[l_info].copy()
         l = self.prune_attributes(l)
         return l

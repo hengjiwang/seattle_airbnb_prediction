@@ -3,7 +3,7 @@ import pandas as pd
 import textblob
 import matplotlib.pyplot as plt
 
-class reviewsPreprocessing:
+class ReviewsPreprocessing:
     
     # Init
     def __init__(self, path):
