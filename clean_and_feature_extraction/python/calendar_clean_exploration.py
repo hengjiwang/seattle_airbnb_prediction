@@ -12,6 +12,7 @@ def clean_calendar(fl):
     #change price from $1,200 to 1200(float)
     #return a cleaned dataframe with listing_id, date, and price
     df = pd.read_csv(fl).dropna().drop(columns='available').reset_index(drop=True)
+    df = df[['listing_id','date','price']] #only keep these three columns
     df['price'] =  df['price'].apply(lambda x: x.replace('$','').replace(',','')).astype('float')   
     df['date'] = pd.to_datetime(df['date'])
     return df
