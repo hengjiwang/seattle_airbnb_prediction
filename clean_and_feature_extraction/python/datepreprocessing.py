@@ -41,12 +41,12 @@ class DatePreprocessing:
 
     def load(self):
         df = clean_calendar(self.path)
-        df['week'] = df.date.dt.dayofweek
         return df
 
     def add_weeks(self, df):
         #day of week
         # week = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+        df['week'] = df.date.dt.dayofweek
         for i,w in enumerate(self.week):
             df[w]=0
             df.loc[df['week']==i,w]=1
@@ -96,17 +96,30 @@ class DatePreprocessing:
         df_holi = df[(df[myholi]==1).any(axis=1)]
         df = pd.concat([df_holi,result],ignore_index=True,sort=False).fillna(0)
         return df
-
-
-    def do_preprocessing(self):
-        df = self.load()
+    
+    def extract_feature(self, df):
+        
         df = self.add_weeks(df)
         df = self.add_months(df)
         df = self.add_years(df)
         df = self.add_christmas_holidays(df)
         df = self.add_other_holidays(df)
-        df.drop(columns=['week','date'],inplace=True)
+        df = df.drop(columns=['week','date'])
         df = self.get_average(df)
+        
+        return df
+
+
+    def do_preprocessing(self):
+        df = self.load()
+#         df = self.add_weeks(df)
+#         df = self.add_months(df)
+#         df = self.add_years(df)
+#         df = self.add_christmas_holidays(df)
+#         df = self.add_other_holidays(df)
+#         df = df.drop(columns=['week','date'])
+#         df = self.get_average(df)
+        df = self.extract_feature(df)
         return df
 
 
