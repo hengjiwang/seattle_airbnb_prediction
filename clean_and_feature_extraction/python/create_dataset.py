@@ -33,6 +33,7 @@ class CreateDataSet:
 if __name__ == '__main__':
     sub_lists = os.listdir(sys.argv[1])
     sub_lists = [sub for sub in sub_lists if sub.startswith('20')]
+    sub_lists.sort()
     for sub in sub_lists:
         creater = CreateDataSet(sys.argv[1]+sub+'/', sys.argv[2]+'/'+sub+'.csv')
         print('Processing'+sub+'...')
