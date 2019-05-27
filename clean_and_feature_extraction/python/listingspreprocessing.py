@@ -131,10 +131,14 @@ class ListingsPreprocessing:
         return l
 
     # Preprocessing listings
-    def do_preprocessing(self):
+    def do_preprocessing(self, operation='extraction'):
         raw_l = self.load()
         attributes = self.get_attributes(raw_l)
         l = self.clean(raw_l, attributes)
-        l = self.extract_feature(l)
-        # save(listings)
+        if operation == 'extraction':
+            l = self.extract_feature(l)
+        elif operation == 'clean':
+            pass
+        else:
+            raise ValueError('Operation can only be clean or extraction!')
         return l

@@ -18,24 +18,29 @@ class ReviewsPreprocessing:
         return r.drop(['id', 'date', 'reviewer_id', 'reviewer_name'], axis=1)
     
     # Extract sentimental features
-    def extract_feature(self, r):
-        ids = list(np.unique(r.listing_id.tolist()))
+    def extract_feature(self, r, merged=False):
 
-        for i in ids:
-            new_row = pd.DataFrame(columns=['listing_id', 'comments'], data=[[i, ''.join(str(r.loc[r.listing_id == i].comments.tolist()))]])    
-            r = r[r.listing_id != i]
-            r = pd.concat((r, new_row))
-            r = r.reset_index(drop=True)
+        if merged == False:
+            r['comments'] = r['comments'].astype(str)
+            r = r.groupby(by='listing_id')['comments'].sum().reset_index()
+        else:
+            pass
 
         r['sentiments'] = r.comments.apply(lambda x: textblob.TextBlob(x).sentiment)
 
         r[['polarity', 'subjectivity']] = r.sentiments.apply(pd.Series)
         r = r.drop(columns=['comments', 'sentiments'])
+        
         return r
     
     # Do preprocessing
-    def do_preprocessing(self):
+    def do_preprocessing(self, operation='extraction'):
         r = self.load()
         r = self.clean(r)
-        r = self.extract_feature(r)
+        if operation == 'extraction':
+            r = self.extract_feature(r)
+        elif operation == 'clean':
+            pass
+        else:
+            raise ValueError('Operation can only be clean or extraction!')
         return r
