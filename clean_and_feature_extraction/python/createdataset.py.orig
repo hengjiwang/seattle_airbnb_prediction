@@ -1,8 +1,9 @@
 import pandas as pd
-import os
+import os, sys
 from listingspreprocessing import ListingsPreprocessing
 from reviewspreprocessing import ReviewsPreprocessing
 from datepreprocessing import DatePreprocessing
+import datetime
 
 class CreateDataset:
     def __init__(self, path):
@@ -40,13 +41,6 @@ class CreateDataset:
         return r
 
     def merge_calendars(self, folders):
-    
-        def clean_calendar(fl):
-            df = pd.read_csv(fl).dropna().drop(columns='available').reset_index(drop=True)
-            df = df[['listing_id','date','price']] #only keep these three columns
-            df['price'] =  df['price'].apply(lambda x: x.replace('$','').replace(',','')).astype('float')   
-            df['date'] = pd.to_datetime(df['date'])
-            return df
         
         print('merging calendars...')
         
@@ -77,11 +71,16 @@ class CreateDataset:
         data = pd.merge(data.drop(columns='price'),
             d_extracted,left_on='id',right_on='listing_id',
             how='inner').drop(columns = 'listing_id')
+<<<<<<< HEAD
+        data.to_csv('../../save/all_data'+str(datetime.date.today())+'.csv', index=False)
+
+=======
         #print('normalize scraped...')
         #data['days_from_scraped'] = ListingsPreprocessing('na').normalize(data['days_from_scraped']+1)         
         print('save to files...')
         data.to_csv('../../save/data_first_addattr_scraped_alldates.csv', index=False)
         print('^O^ Finish!')
+>>>>>>> 6f70d401215ed446620781bc7674acc07b0a2274
 
 if __name__ == '__main__':
     cd = CreateDataset('../../data/')

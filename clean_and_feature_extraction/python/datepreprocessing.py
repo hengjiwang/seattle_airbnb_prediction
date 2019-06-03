@@ -1,6 +1,6 @@
-import datetime,calendar
+import datetime, calendar
 import pandas as pd
-from calendar_clean_exploration import clean_calendar
+from dateutil.parser import parse
 
 class DatePreprocessing:
     def __init__(self, path):
@@ -40,16 +40,25 @@ class DatePreprocessing:
         return datetime.datetime(y,m,day)
 
     def load(self):
-        df = clean_calendar(self.path)
+        df = self.clean_calendar()
+        return df
+    
+    def clean_calendar(self):
+        df = pd.read_csv(self.path).dropna().drop(columns='available').reset_index(drop=True)
+        df = df[['listing_id','date','price']] #only keep these three columns
+        df['price'] =  df['price'].apply(lambda x: x.replace('$','').replace(',','')).astype('float')   
+        df['date'] = pd.to_datetime(df['date'])
+        df = self.add_scraped(df)
         return df
 
     def add_weeks(self, df):
         #day of week
         # week = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
         df['week'] = df.date.dt.dayofweek
-        for i,w in enumerate(self.week):
-            df[w]=0
-            df.loc[df['week']==i,w]=1
+        #for i,w in enumerate(self.week):
+        #    df[w]=0
+        #    df.loc[df['week']==i,w]=1
+        df['FriSat'] = df.apply(lambda x: int(x['week']==4 or x['week']==5),axis=1)
         return df
 
     def add_months(self, df):
@@ -80,6 +89,12 @@ class DatePreprocessing:
             df.loc[df.date==holiday18[i],h]=1
             df.loc[df.date==holiday19[i],h]=1
         return df
+    
+    def add_scraped(self,df):
+        scraped = parse([x for x in self.path.split('/') if x.startswith('20')][0].replace('_',''))
+        df['days_from_scraped'] = (df['date']-scraped).dt.days
+        #df['days_from_scraped'] = ListingsPreprocessing('na').normalize(df['days_from_scraped']+1)
+        return df
 
     def get_average(self, df):
         myholi = ['ChristmasHolidays']
@@ -97,29 +112,40 @@ class DatePreprocessing:
         df = pd.concat([df_holi,result],ignore_index=True,sort=False).fillna(0)
         return df
     
+    
+    def drop_dupweek(self,df):
+        myholi = self.holidays
+        myholi.append('ChristmasHolidays')
+        df_holi = df[(df[myholi]==1).any(axis=1)].copy()
+        df_nholi = df[(df[myholi]==0).all(axis=1)].copy()    
+        
+        df_nholi['ym'] = df_nholi['date'].dt.strftime('%y%m')
+        mark = ['listing_id','week','ym']
+        df_nholi.drop_duplicates(subset=mark,keep='first',inplace=True)  
+        df_nholi.drop(columns='ym',inplace=True)
+        df = pd.concat([df_holi,df_nholi],ignore_index=True,sort=False)
+        return df
+    
     def extract_feature(self, df):
         
         df = self.add_weeks(df)
-        df = self.add_months(df)
-        df = self.add_years(df)
         df = self.add_christmas_holidays(df)
         df = self.add_other_holidays(df)
+        #df = self.get_average(df)
+        #df = self.drop_dupweek(df)   
+        df = self.add_months(df)
+        df = self.add_years(df)
         df = df.drop(columns=['week','date'])
-        df = self.get_average(df)
-        
         return df
 
 
     def do_preprocessing(self):
         df = self.load()
-#         df = self.add_weeks(df)
-#         df = self.add_months(df)
-#         df = self.add_years(df)
-#         df = self.add_christmas_holidays(df)
-#         df = self.add_other_holidays(df)
-#         df = df.drop(columns=['week','date'])
-#         df = self.get_average(df)
         df = self.extract_feature(df)
+        #df = df.drop(columns=['week','date'])
+        #df = df.drop(columns=self.week)
         return df
+
+
 
 
