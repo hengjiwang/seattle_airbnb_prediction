@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import re, collections
-from scipy.stats import boxcox
 
 class ListingsPreprocessing:
     
@@ -20,35 +19,28 @@ class ListingsPreprocessing:
 
     # Prune unusable attributes
     def prune_attributes(self, l):
-        l = l.dropna(how = 'any', subset = ['id','host_since','neighbourhood_cleansed',
-        'latitude','longitude','property_type','room_type','accommodates','bathrooms',
-        'bedrooms','beds','bed_type','amenities','price','cleaning_fee',
-        'guests_included', 'extra_people','availability_30', 'availability_60', 'availability_90',
-        'availability_365', 'first_review', 'last_review','minimum_nights','maximum_nights',
-        'number_of_reviews','cancellation_policy'])
-        for x in ['beds','bedrooms','bathrooms','price','accommodates']:
-            l = l[l[x]!=0]
+        l['price'] = (l['price'].str.replace(r'[^-+\d.]', '').astype(float))
+        l = l.dropna(how = 'any', subset = ['id', 'property_type', 'neighbourhood_cleansed', 'bathrooms', \
+                                                  'bathrooms', 'beds', 'price'])
+        l = l[l['beds']!=0]
+        l = l[l['bedrooms']!=0]
+        l = l[l['bathrooms']!=0]
+        l = l[l['price']!=0]
+        l = l[l['accommodates']!=0]
         l = l.reset_index(drop=True)
-        for x in ['price','cleaning_fee','extra_people']:
-            l[x] = l[x].str.replace(r'[^-+\d.]', '').astype(float)
-        for x in ['host_since','first_review', 'last_review']:
-            l[x] = pd.to_datetime(l[x])
-        l.loc[l['maximum_nights']>2000,'maximum_nights']=2000
-        l['no_reviews'] = 0
-        l.loc[l['review_scores_rating']!=l['review_scores_rating'],['review_scores_rating','no_reviews']]=0,1
         return l
 
     # Encode categorical attributes
     def encode_cat(self, l):
-        #for i in range(len(l)):
-        #    if l.loc[i, 'review_scores_accuracy'] != l.loc[i, 'review_scores_accuracy']:
-        #        l.loc[i, 'review_scores_accuracy'] = 'No Review'
+        for i in range(len(l)):
+            if l.loc[i, 'review_scores_accuracy'] != l.loc[i, 'review_scores_accuracy']:
+                l.loc[i, 'review_scores_accuracy'] = 'No Review'
 
         categorical_attributes = ['neighbourhood_cleansed', 
                               'property_type',
                               'room_type',
                               'bed_type',
-                              #'review_scores_accuracy',
+                              'review_scores_accuracy',
                               'cancellation_policy']
 
         for attr in categorical_attributes:
@@ -62,42 +54,17 @@ class ListingsPreprocessing:
         mean = np.mean(col)
         std = np.std(col)
         return col.apply(lambda x: (x - mean) / std)
-    
-    #another normalize function   
-    def normalize(self,col):
-        newcol,la = boxcox(col)
-        min_ = newcol.min()
-        dif_ = newcol.max()-min_
-        return (newcol-min_)/dif_
-    
+
     # Encode uncategorical attributes
     def encode_uncat(self, l):
         noncategorical_attributes = ['host_since', 'accommodates', 
-                                 'bedrooms', 'beds', 'bathrooms', 'number_of_reviews','review_scores_rating', 'cleaning_fee',
-                                   'guests_included', 'extra_people','availability_30', 'availability_60', 'availability_90',
-                                   'availability_365', 'first_review', 'last_review',
-                                'minimum_nights', 'maximum_nights','latitude','longitude']
-        dtattr = ['host_since','first_review', 'last_review']
-        for i in dtattr:
-            min_=l[i].min()
-            l[i] = (l[i]-min_).dt.days
-        '''
+                                 'bedrooms', 'beds', 'bathrooms', 'number_of_reviews',
+                                'minimum_nights', 'maximum_nights']
         for attr in noncategorical_attributes:
-            #if attr == 'host_since':
-                #l[attr] = self.standardize(l[attr].str.replace(r'-', '').astype(float))
-            #else:
-                #l[attr] = self.standardize(l[attr].astype(float))
-            print(attr)
-            if attr in dtattr:
-                min_ = l[attr].min()
-                l[attr] = (l[attr]-min_).dt.days
-            elif attr in ['latitude','longitude']:
-                min_ = l[attr].min()
-                l[attr] = l[attr]-min_
-            #print(attr,sorted(l[attr])[:10])
-            l[attr] = self.normalize(l[attr]+1)
-            #print(sorted(l[attr])[:5],sorted(l[attr])[-5:])
-        '''
+            if attr == 'host_since':
+                l[attr] = self.standardize(l[attr].str.replace(r'-', '').astype(float))
+            else:
+                l[attr] = self.standardize(l[attr].astype(float))
         return l
 
     # Extract features from amenities
@@ -127,6 +94,7 @@ class ListingsPreprocessing:
             for i in range(numa):
                 if amenities_picked[i] in l.amenities[j]:
                     new_cols.iloc[j,i] += 1
+
         l = pd.concat((l.drop('amenities', axis=1),new_cols), axis=1)
 
         return l
@@ -136,8 +104,6 @@ class ListingsPreprocessing:
         l_info = ['id',
         'host_since',
         'neighbourhood_cleansed',
-        'latitude',
-        'longitude',
         'property_type',
         'room_type',
         'accommodates',
@@ -147,20 +113,10 @@ class ListingsPreprocessing:
         'bed_type',
         'amenities',
         'price',
-        'cleaning_fee',
-        'guests_included', 
-        'extra_people',
-        'availability_30',
-        'availability_60',
-        'availability_90',
-        'availability_365', 
-        'first_review', 
-        'last_review',
         'minimum_nights',
         'maximum_nights',
         'number_of_reviews',
-        'review_scores_rating',
-        #'review_scores_accuracy',
+        'review_scores_accuracy',
         'cancellation_policy']
 
         l = l[l_info].copy()
