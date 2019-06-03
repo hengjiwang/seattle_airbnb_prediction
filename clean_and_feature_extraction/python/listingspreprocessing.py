@@ -60,11 +60,11 @@ class ListingsPreprocessing:
         noncategorical_attributes = ['host_since', 'accommodates', 
                                  'bedrooms', 'beds', 'bathrooms', 'number_of_reviews',
                                 'minimum_nights', 'maximum_nights']
-        for attr in noncategorical_attributes:
-            if attr == 'host_since':
-                l[attr] = self.standardize(l[attr].str.replace(r'-', '').astype(float))
-            else:
-                l[attr] = self.standardize(l[attr].astype(float))
+#         for attr in noncategorical_attributes:
+#             if attr == 'host_since':
+#                 l[attr] = self.standardize(l[attr].str.replace(r'-', '').astype(float))
+#             else:
+#                 l[attr] = self.standardize(l[attr].astype(float))
         return l
 
     # Extract features from amenities
@@ -102,7 +102,7 @@ class ListingsPreprocessing:
     # Clean data
     def clean(self, l, attr):
         l_info = ['id',
-        'host_since',
+#         'host_since',
         'neighbourhood_cleansed',
         'property_type',
         'room_type',

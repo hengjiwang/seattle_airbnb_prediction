@@ -1,8 +1,9 @@
 import pandas as pd
-import os
+import os, sys
 from listingspreprocessing import ListingsPreprocessing
 from reviewspreprocessing import ReviewsPreprocessing
 from datepreprocessing import DatePreprocessing
+import datetime
 
 class CreateDataset:
     def __init__(self, path):
@@ -66,7 +67,7 @@ class CreateDataset:
         data = pd.merge(data.drop(columns='price'),
             d_extracted,left_on='id',right_on='listing_id',
             how='inner').drop(columns = 'listing_id')
-        data.to_csv('../../save/all_data.csv', index=False)
+        data.to_csv('../../save/all_data'+str(datetime.date.today())+'.csv', index=False)
 
 
 if __name__ == '__main__':
