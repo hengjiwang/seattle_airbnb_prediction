@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import textblob
-import matplotlib.pyplot as plt
 
 class ReviewsPreprocessing:
     

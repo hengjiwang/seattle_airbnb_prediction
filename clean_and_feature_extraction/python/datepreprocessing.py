@@ -5,7 +5,7 @@ from dateutil.parser import parse
 class DatePreprocessing:
     def __init__(self, path):
         self.path = path
-        self.holidays = ['NewYear','MartinLK','President','Memorial','Independence','Labor','Columbus','Veterans','Thanksgiving']
+        self.holidays = ['NewYear','MartinLK','President','Memorial','Independence','Labor','Columbus','Veterans','Thanksgiving','Christmas']
         self.week = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
         self.month =  ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
         self.year = [2018,2019]
@@ -13,7 +13,7 @@ class DatePreprocessing:
 
     def holiday(self, year):
         #fixed holidays
-        fixmd = [[1,1],[7,4],[11,11]]
+        fixmd = [[1,1],[7,4],[11,11],[12,25]]
         holidays = [datetime.datetime(year,x[0],x[1]) for x in fixmd]
         #floating holidays
         #'2,3,1': the third Monday of Feburary;'5,-1,1': the last Monday of May 
@@ -53,12 +53,12 @@ class DatePreprocessing:
 
     def add_weeks(self, df):
         #day of week
-        # week = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+        week = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
         df['week'] = df.date.dt.dayofweek
-        #for i,w in enumerate(self.week):
-        #    df[w]=0
-        #    df.loc[df['week']==i,w]=1
-        df['FriSat'] = df.apply(lambda x: int(x['week']==4 or x['week']==5),axis=1)
+        for i,w in enumerate(self.week):
+            df[w]=0
+            df.loc[df['week']==i,w]=1
+        #df['FriSat'] = df.apply(lambda x: int(x['week']==4 or x['week']==5),axis=1)
         return df
 
     def add_months(self, df):
@@ -66,6 +66,14 @@ class DatePreprocessing:
         for i,m in enumerate(self.month):
             df[m]=0
             df.loc[df.date.dt.month==i+1,m]=1
+        return df
+
+    def add_weather(self,df):
+        weather = pd.read_excel('../seattle_weather.xlsx').values
+        df['aveT'] = 0
+        df['precipitation'] = 0
+        for i,m in enumerate(self.month):
+            df.loc[df[m]==1,['aveT','precipitation']]=weather[i]
         return df
 
     def add_years(self, df):
@@ -129,12 +137,13 @@ class DatePreprocessing:
     def extract_feature(self, df):
         
         df = self.add_weeks(df)
-        df = self.add_christmas_holidays(df)
+        #df = self.add_christmas_holidays(df)
         df = self.add_other_holidays(df)
         #df = self.get_average(df)
         #df = self.drop_dupweek(df)   
         df = self.add_months(df)
         df = self.add_years(df)
+        df = self.add_weather(df)
         df = df.drop(columns=['week','date'])
         return df
 

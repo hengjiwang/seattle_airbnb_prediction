@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import re, collections
 from scipy.stats import boxcox
+from geopy import distance
 
 class ListingsPreprocessing:
     
@@ -76,12 +76,12 @@ class ListingsPreprocessing:
                                  'bedrooms', 'beds', 'bathrooms', 'number_of_reviews','review_scores_rating', 'cleaning_fee',
                                    'guests_included', 'extra_people','availability_30', 'availability_60', 'availability_90',
                                    'availability_365', 'first_review', 'last_review',
-                                'minimum_nights', 'maximum_nights','latitude','longitude']
+                                'minimum_nights', 'maximum_nights','latitude','longitude','attractions_in_1mile']
         dtattr = ['host_since','first_review', 'last_review']
-        for i in dtattr:
-            min_=l[i].min()
-            l[i] = (l[i]-min_).dt.days
-        '''
+        #for i in dtattr:
+        #    min_=l[i].min()
+        #    l[i] = (l[i]-min_).dt.days
+       
         for attr in noncategorical_attributes:
             #if attr == 'host_since':
                 #l[attr] = self.standardize(l[attr].str.replace(r'-', '').astype(float))
@@ -97,7 +97,6 @@ class ListingsPreprocessing:
             #print(attr,sorted(l[attr])[:10])
             l[attr] = self.normalize(l[attr]+1)
             #print(sorted(l[attr])[:5],sorted(l[attr])[-5:])
-        '''
         return l
 
     # Extract features from amenities
@@ -127,9 +126,16 @@ class ListingsPreprocessing:
             for i in range(numa):
                 if amenities_picked[i] in l.amenities[j]:
                     new_cols.iloc[j,i] += 1
-
         l = pd.concat((l.drop('amenities', axis=1),new_cols), axis=1)
 
+        return l
+
+    def count_attr(self,l):
+        def num_attr(pos,attr):
+            dis = attr.apply(lambda x: distance.distance(x[1:],pos).miles,axis=1)
+            return (dis<1).sum()
+        attractions = pd.read_excel('../seattle_attractions.xlsx')
+        l['attractions_in_1mile'] = l[['latitude','longitude']].apply(lambda x: num_attr(x,attractions),axis=1)
         return l
 
     # Clean data
@@ -170,6 +176,7 @@ class ListingsPreprocessing:
 
     # Extract features
     def extract_feature(self, l):
+        l = self.count_attr(l)
         l = self.encode_cat(l)
         l = self.encode_uncat(l)
         l = self.count_amenities(l)

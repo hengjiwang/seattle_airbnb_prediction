@@ -1,5 +1,5 @@
 import pandas as pd
-import os
+import os,sys
 from listingspreprocessing import ListingsPreprocessing
 from reviewspreprocessing import ReviewsPreprocessing
 from datepreprocessing import DatePreprocessing
@@ -40,13 +40,6 @@ class CreateDataset:
         return r
 
     def merge_calendars(self, folders):
-    
-        def clean_calendar(fl):
-            df = pd.read_csv(fl).dropna().drop(columns='available').reset_index(drop=True)
-            df = df[['listing_id','date','price']] #only keep these three columns
-            df['price'] =  df['price'].apply(lambda x: x.replace('$','').replace(',','')).astype('float')   
-            df['date'] = pd.to_datetime(df['date'])
-            return df
         
         print('merging calendars...')
         
@@ -57,7 +50,7 @@ class CreateDataset:
         df = df.drop_duplicates(subset=['listing_id','date'], keep='first').reset_index(drop='True')
         return df
 
-    def create_dataset(self):
+    def create_dataset(self,file_out):
         print('create dataset...')
         folders = [x for x in os.listdir(self.path)]
         l_merged = self.merge_listings(folders).reset_index(drop = True)
@@ -78,12 +71,16 @@ class CreateDataset:
             d_extracted,left_on='id',right_on='listing_id',
             how='inner').drop(columns = 'listing_id')
         #print('normalize scraped...')
-        #data['days_from_scraped'] = ListingsPreprocessing('na').normalize(data['days_from_scraped']+1)         
+        
+        data['days_from_scraped'] = ListingsPreprocessing('na').normalize(data['days_from_scraped']+1)
+        data['aveT'] = ListingsPreprocessing('na').normalize(data['aveT'])
+        data['precipitation'] = ListingsPreprocessing('na').normalize(data['precipitation'])      
         print('save to files...')
-        data.to_csv('../../save/data_first_addattr_scraped_alldates.csv', index=False)
-        print('^O^ Finish!')
+        data.to_csv('../../save/'+file_out, index=False)
+        print('^O^ Finish, save to %s!' % file_out)
 
 if __name__ == '__main__':
+    fl = sys.argv[1]
     cd = CreateDataset('../../data/')
-    cd.create_dataset()
+    cd.create_dataset(fl)
 
