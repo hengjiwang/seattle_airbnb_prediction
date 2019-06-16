@@ -4,7 +4,9 @@ from sklearn.ensemble import RandomForestRegressor
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 import sklearn.metrics as metrics
-import sys,os
+import sys,os,time
+import warnings
+warnings.filterwarnings('ignore')
 
 def checkcommand():
     if len(sys.argv)!=2:
@@ -19,11 +21,11 @@ def checkcommand():
 def load(fl):
     print('load the %s......' % fl)
     df = pd.read_csv(fl)
-    print('add num_attractions & norm scraped &weather......')
+    print('add num_attractions & norm scraped......')
     #df = clean(df)
     print('The shape of raw data:', df.shape)
-    print('Columns:')
-    print(df.columns.values)
+    #print('Columns:')
+    #print(df.columns.values)
     return df
 
 def clean(df):
@@ -51,35 +53,61 @@ def separate_training_test(dataset):
     
     return x_train,y_train,x_test,y_test
 
-def xgboost(x_train,y_train,x_test,y_testi,cols):
-    print('start xgboost training......')
+def xgboost(x_train,y_train,x_test,y_test,cols,dep=10,eta=0.1,lam=2.5,n=100):
+    print('*****************************************************')
+    print('start xgboost training with depth=%s,eta=%s,lam=%s,num_round=%s' % (dep,eta,lam,n))
     dtrain = xgb.DMatrix(x_train[:], label=y_train)
     dtest = xgb.DMatrix(x_test[:], label=y_test)
     # specify parameters via map
-    param = {'max_depth':15, 'eta':0.3, 'lambda':1, 
-             'silent':1, 'objective':'reg:linear', 
+    param = {'silent':1, 'objective':'reg:linear', 
              #'tree_method':'gpu_hist', 
              'eval_metric':'rmse'}
-    num_round = 20
+    param['max_depth'] = dep
+    param['eta'] = eta
+    param['lambda'] = lam
+    num_round = n
     bst = xgb.train(param, dtrain, num_round)
     # make prediction
     preds = bst.predict(dtest)
     print('Training error:') 
     print(metrics.median_absolute_error(np.exp(y_test), np.exp(preds)))
-
+    '''
     df_f = pd.DataFrame(sorted(bst.get_score().items(), key=lambda x: x[1],reverse=True)).set_index([0]) 
     fmax = df_f.max()
     df_f = (df_f/fmax).reset_index()
     df_f['features'] = df_f.apply(lambda x: cols[int(x[0][1:])] , axis=1)
     pd.set_option('display.max_rows',None)
-    print(df_f)
+    print(df_f.iloc[0:10])
+    '''
+def xgbsearch(x_train,y_train):
+    print('start xgboost gridsearchcv......')
+    param = {'max_depth':[10,15,20],
+             #'eta':[0.01,0.1],
+             #'lambda':[0.5,1.5]
+            }
+    other_param={'silent':1,
+             'objective':'reg:linear',
+             'learning_rate':0.1,
+             'reg_lambda': 1,
+             #'tree_method':'gpu_hist', 
+             'eval_metric':'rmse'}
+    xgb_model = xgb.XGBRegressor(other_param)
+    gs = GridSearchCV(xgb_model,param_grid=param,n_jobs=15)
+    gs.fit(x_train,y_train)
+    print('the best parameters:', gs.best_params_)
+    print('the best score:',gs.best_score_)
 
 if __name__=='__main__':
     fl = checkcommand()
     df = load(fl)
-    x_train,y_train,x_test,y_test = separate_training_test(df)
+    #x_train,y_train,x_test,y_test = separate_training_test(df)
     features  = list(df.columns.values)
     features.remove('price')
     features.remove('id')
-    xgboost(x_train,y_train,x_test,y_test,features)
+    #xgbsearch(x_train,y_train)
+    for i in range(100):
+        st = time.time()
+        x_train,y_train,x_test,y_test = separate_training_test(df)
+        xgboost(x_train,y_train,x_test,y_test,features)
+        print('time:',time.time()-st) 
     print('finish!')
