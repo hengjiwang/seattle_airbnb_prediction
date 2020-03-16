@@ -1,5 +1,4 @@
-# seattle_airbnb_prediction
-CSE547 Project: Seattle Airbnb Prices Prediction 
+# CSE547 Project: Seattle Airbnb Prices Prediction 
 
 ## Data Preprocessing
 
