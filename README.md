@@ -7,7 +7,7 @@
 We divided the attributes in the listings files into two types, which are categorical features and quantitative features. Categorical attributes such as neighborhoods, bed types and property types were one-hot encoded into features which only have 0 or 1 values. 
 <!-- For quantitative attributes, we performed box-cox transformation and then min-max normalization on them to guarantee their values are distributed relatively uniform from 0 to 1.-->
 
-As for the location information, we kept the direct features -- latitude, longitude, and the neighborhood of each listing. Furthermore, we picked some attractions, such as space needle and pike place market, as landmarks and computed the distance between them and each property. Then we counted how many attractions are near (less than one mile
+As for the location information, we kept the direct features -- latitude, longitude, and the neighborhood of each listing. Furthermore, we picked some attractions, such as space needle and pike place market, as landmarks and computed the distance between them and each property. Then we counted how many attractions are near (less than one mile)
 
 ### Reviews
 
